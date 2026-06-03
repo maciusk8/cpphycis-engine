@@ -7,6 +7,7 @@ struct vec2d {
     float y;
 
     //operators
+    vec2d operator+(const vec2d& other) const noexcept { return {x + other.x, y + other.y}; }
     vec2d operator-(const vec2d& other) const noexcept { return {x - other.x, y - other.y}; }
     vec2d operator*(float a) const noexcept { return {x * a, y * a}; }
     vec2d& operator+=(const vec2d& other) noexcept {

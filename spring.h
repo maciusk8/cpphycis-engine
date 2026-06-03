@@ -6,6 +6,7 @@ struct Spring {
     int idB;
     float resting_length; 
     float stiffness;
+    float damping;
 };
 
 #endif

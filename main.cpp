@@ -1,7 +1,6 @@
 #include <raylib.h>
-
 #include <cmath>
-
+#include <vector>
 #include "engine.h"
 
 int main() {
@@ -13,31 +12,34 @@ int main() {
 
     engine my_engine;
 
-    // --- GENEROWANIE PIĘCIOKĄTA ---
-    const int num_points = 5;
+    // --- GENEROWANIE BALONU (30 punktów) ---
+    const int num_points = 30;
     const float radius = 100.0f;
     const Vector2 center = {400.0f, 300.0f};
 
     for (int i = 0; i < num_points; ++i) {
-        float angle = i * (2.0f * 3.14159f / num_points) - (3.14159f / 2.0f);
+        float angle = i * (2.0f * 3.14159f / num_points);
 
-        my_engine.positions.push_back({center.x + std::cos(angle) * radius,
-                                       center.y + std::sin(angle) * radius});
-        my_engine.velocities.push_back({0.0f, 0.0f});
-        my_engine.forces.push_back({0.0f, 0.0f});
+        vec2d pos = {center.x + std::cos(angle) * radius,
+                     center.y + std::sin(angle) * radius};
+        
+        my_engine.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, 6.0f});
     }
 
-    // --- ŁĄCZENIE SPRĘŻYN (Graf pełny) ---
+    // --- ŁĄCZENIE SPRĘŻYN (Tylko na obwodzie) ---
     for (int i = 0; i < num_points; ++i) {
-        for (int j = i + 1; j < num_points; ++j) {
-            vec2d pA = my_engine.positions[i];
-            vec2d pB = my_engine.positions[j];
+        int next_i = (i + 1) % num_points;
+        vec2d pA = my_engine.nodes[i].pos;
+        vec2d pB = my_engine.nodes[next_i].pos;
 
-            float dist = std::sqrt((pA.x - pB.x) * (pA.x - pB.x) + (pA.y - pB.y) * (pA.y - pB.y));
+        float dist = std::sqrt((pA.x - pB.x) * (pA.x - pB.x) + (pA.y - pB.y) * (pA.y - pB.y));
 
-            my_engine.springs.push_back({i, j, dist, 5.0f});
-        }
+        my_engine.springs.push_back({i, next_i, dist, 1000.0f, 15.0f});
     }
+
+    // Inicjalizacja ciśnienia (Pressure Soft Body)
+    my_engine.target_area = my_engine.get_volume();
+    my_engine.pressure_mult = 1.0f; 
 
     int grabbedPoint = -1;
 
@@ -48,10 +50,10 @@ int main() {
         Vector2 mouse = GetMousePosition();
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            for (size_t i = 0; i < my_engine.positions.size(); ++i) {
-                float dx = my_engine.positions[i].x - mouse.x;
-                float dy = my_engine.positions[i].y - mouse.y;
-                if (std::sqrt(dx * dx + dy * dy) < 20.0f) {
+            for (size_t i = 0; i < my_engine.nodes.size(); ++i) {
+                float dx = my_engine.nodes[i].pos.x - mouse.x;
+                float dy = my_engine.nodes[i].pos.y - mouse.y;
+                if (std::sqrt(dx * dx + dy * dy) < my_engine.nodes[i].radius * 3.0f) {
                     grabbedPoint = (int)i;
                     break;
                 }
@@ -62,13 +64,22 @@ int main() {
         }
 
         // ==========================================
-        // 2. FIZYKA
+        // 2. FIZYKA (Sub-stepping)
         // ==========================================
-        my_engine.step();
+        
+        // Uruchamiamy fizykę wielokrotnie w mniejszych krokach (dt = 0.002) dla super stabilności
+        for (int step = 0; step < 8; ++step) {
+            if (grabbedPoint != -1) {
+                my_engine.nodes[grabbedPoint].pos = {mouse.x, mouse.y};
+                my_engine.nodes[grabbedPoint].prev_pos = {mouse.x, mouse.y}; 
+            }
 
-        if (grabbedPoint != -1) {
-            my_engine.positions[grabbedPoint] = {mouse.x, mouse.y};
-            my_engine.velocities[grabbedPoint] = {0.0f, 0.0f};
+            my_engine.step();
+
+            if (grabbedPoint != -1) {
+                my_engine.nodes[grabbedPoint].pos = {mouse.x, mouse.y};
+                my_engine.nodes[grabbedPoint].prev_pos = {mouse.x, mouse.y};
+            }
         }
 
         // ==========================================
@@ -77,17 +88,37 @@ int main() {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
+        // Renderowanie wypełnienia
+        std::vector<Vector2> poly_points;
+        vec2d center_pos = {0,0};
+        for (const auto& n : my_engine.nodes) {
+            center_pos = center_pos + n.pos;
+        }
+        center_pos = center_pos * (1.0f / my_engine.nodes.size());
+        
+        poly_points.push_back({center_pos.x, center_pos.y}); // środek na indexie 0
+        
+        // Zmiana kolejności z CW na CCW (Counter-Clockwise) aby OpenGL nie ukrył trójkątów (Backface Culling)
+        for (int i = (int)my_engine.nodes.size() - 1; i >= 0; --i) {
+            poly_points.push_back({my_engine.nodes[i].pos.x, my_engine.nodes[i].pos.y});
+        }
+        poly_points.push_back({my_engine.nodes.back().pos.x, my_engine.nodes.back().pos.y}); // zamknij obwód
+        
+        DrawTriangleFan(poly_points.data(), poly_points.size(), SKYBLUE);
+
+        // Rysowanie grubych krawędzi balonu (sprężyny)
         for (const auto& spring : my_engine.springs) {
-            vec2d pA = my_engine.positions[spring.idA];
-            vec2d pB = my_engine.positions[spring.idB];
-            DrawLineEx({pA.x, pA.y}, {pB.x, pB.y}, 5.0f, LIGHTGRAY);
+            vec2d pA = my_engine.nodes[spring.idA].pos;
+            vec2d pB = my_engine.nodes[spring.idB].pos;
+            DrawLineEx({pA.x, pA.y}, {pB.x, pB.y}, 5.0f, BLUE);
         }
 
-        for (const auto& pos : my_engine.positions) {
-            DrawCircle((int)pos.x, (int)pos.y, 15.0f, DARKBLUE);
+        // Rysowanie samych węzłów
+        for (const auto& node : my_engine.nodes) {
+            DrawCircle((int)node.pos.x, (int)node.pos.y, node.radius, DARKBLUE);
         }
 
-        DrawText("Przeciagnij wezly myszka!", 10, 10, 20, DARKGRAY);
+        DrawText("Przeciagnij wezly myszka! (Pressure Soft Body)", 10, 10, 20, DARKGRAY);
 
         EndDrawing();
     }
