@@ -1,0 +1,8 @@
+# .gitignore
+build/
+.vs/
+.vscode/
+.idea/
+silnik_dod
+*.exe
+.DS_Store

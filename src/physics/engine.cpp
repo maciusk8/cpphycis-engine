@@ -1,4 +1,4 @@
-#include "engine.h"
+#include "physics/engine.h"
 #include <cmath>
 
 float engine::get_volume() const noexcept {
@@ -82,8 +82,8 @@ void engine::integrate() noexcept {
         node.prev_pos = current_pos;
         
         // Kolizja z podłogą (Y = 600)
-        if (node.pos.y > 600.0f - node.radius) {
-            node.pos.y = 600.0f - node.radius;
+        if (node.pos.y > 800.0f - node.radius) {
+            node.pos.y = 800.0f - node.radius;
             // Proste odbicie i tarcie z podłogą
             float vx = node.pos.x - node.prev_pos.x;
             node.prev_pos.x = node.pos.x - vx * 0.9f; // tarcie
@@ -94,8 +94,8 @@ void engine::integrate() noexcept {
         if (node.pos.x < node.radius) {
             node.pos.x = node.radius;
             node.prev_pos.x = node.pos.x;
-        } else if (node.pos.x > 800.0f - node.radius) {
-            node.pos.x = 800.0f - node.radius;
+        } else if (node.pos.x > 1200.0f - node.radius) {
+            node.pos.x = 1200.0f - node.radius;
             node.prev_pos.x = node.pos.x;
         }
 
@@ -107,4 +107,26 @@ void engine::integrate() noexcept {
 void engine::step() noexcept {
     apply_forces();
     integrate();
+}
+
+void engine::create_blob(vec2d center, float radius, int num_points) noexcept {
+    // Generowanie punktów
+    for (int i = 0; i < num_points; ++i) {
+        float angle = i * (2.0f * 3.14159f / num_points);
+        vec2d pos = {center.x + std::cos(angle) * radius,
+                     center.y + std::sin(angle) * radius};
+        nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, 6.0f});
+    }
+
+    // Łączenie sprężyn na obwodzie
+    for (int i = 0; i < num_points; ++i) {
+        int next_i = (i + 1) % num_points;
+        vec2d pA = nodes[i].pos;
+        vec2d pB = nodes[next_i].pos;
+        float dist = (pA - pB).length(); // tu korzystamy z Twojego fajnego vec2d.length()
+        springs.push_back({i, next_i, dist, 1000.0f, 15.0f});
+    }
+
+    target_area = get_volume();
+    pressure_mult = 1.0f;
 }

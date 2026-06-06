@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "spring.h"
-#include "vec2d.h"
+#include "physics/spring.h"
+#include "physics/vec2d.h"
 
 struct Node {
     vec2d pos;
@@ -27,6 +27,8 @@ struct engine {
     void step() noexcept;
     void apply_forces() noexcept;
     void integrate() noexcept;
+
+    void create_blob(vec2d center, float radius, int num_points) noexcept;
 };
 
 #endif
