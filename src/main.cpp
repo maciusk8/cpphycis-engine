@@ -8,7 +8,7 @@ int main() {
     SetTargetFPS(240);
 
     engine my_engine;
-    my_engine.create_blob({400.0f, 300.0f}, 100.0f, 30);
+    my_engine.create_blob({400.0f, 300.0f}, 100.0f, 50);
 
     Renderer renderer;
     int grabbedPoint = -1;
