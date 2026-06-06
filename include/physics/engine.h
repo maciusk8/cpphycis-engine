@@ -20,6 +20,7 @@ struct engine {
     constexpr static float dt = 0.002f; // 8x mniejszy krok dla ogromnej stabilności!
 
     // Zmienne ciśnienia (Pressure Soft Body)
+    vec2d gravity = {0.0f, 1000.0f};
     float target_area = 0.0f;
     float pressure_mult = 0.0f;
 

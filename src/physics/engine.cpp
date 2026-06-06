@@ -64,9 +64,6 @@ void engine::apply_forces() noexcept {
 
 // Całkowanie Verlet dla większej stabilności
 void engine::integrate() noexcept {
-    // Siła grawitacji
-    const vec2d gravity = {0.0f, 1000.0f};
-
     for (auto& node : nodes) {
         // Obliczenie przyspieszenia (a = F / m + grawitacja)
         vec2d acc = (node.force * (1.0f / node.mass)) + gravity;
@@ -123,7 +120,7 @@ void engine::create_blob(vec2d center, float radius, int num_points) noexcept {
         int next_i = (i + 1) % num_points;
         vec2d pA = nodes[i].pos;
         vec2d pB = nodes[next_i].pos;
-        float dist = (pA - pB).length(); // tu korzystamy z Twojego fajnego vec2d.length()
+        float dist = (pA - pB).length();
         springs.push_back({i, next_i, dist, 1000.0f, 15.0f});
     }
 
