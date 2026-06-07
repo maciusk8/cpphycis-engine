@@ -17,7 +17,7 @@ struct Node {
 struct engine {
     std::vector<Node> nodes;
     std::vector<Spring> springs;
-    constexpr static float dt = 0.002f; // 8x mniejszy krok dla ogromnej stabilności!
+    constexpr static float dt = 0.002f;  // 8x mniejszy krok dla ogromnej stabilności!
 
     // Zmienne ciśnienia (Pressure Soft Body)
     float target_area = 0.0f;
@@ -26,6 +26,7 @@ struct engine {
     float get_volume() const noexcept;
     void step() noexcept;
     void apply_forces() noexcept;
+    void apply_pressure() noexcept;
     void integrate() noexcept;
 
     void create_blob(vec2d center, float radius, int num_points) noexcept;

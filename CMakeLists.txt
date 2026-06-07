@@ -9,6 +9,7 @@ FetchContent_Declare(
     raylib
     GIT_REPOSITORY https://github.com/raysan5/raylib.git
     GIT_TAG        master
+    GIT_SHALLOW    ON
 )
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
