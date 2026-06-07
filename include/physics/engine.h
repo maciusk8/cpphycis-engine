@@ -17,7 +17,7 @@ struct Node {
 struct engine {
     std::vector<Node> nodes;
     std::vector<Spring> springs;
-    constexpr static float dt = 0.002f; // 8x mniejszy krok dla ogromnej stabilności!
+    float dt = 0.002f; // 8x mniejszy krok dla ogromnej stabilności!
 
     // Zmienne ciśnienia (Pressure Soft Body)
     vec2d gravity = {0.0f, 1000.0f};

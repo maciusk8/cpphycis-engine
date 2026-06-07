@@ -17,8 +17,14 @@ int main() {
 
     Renderer renderer;
     int grabbedPoint = -1;
+    //akumulator czasu
+    double accumulator = 0.0;
 
     while (!WindowShouldClose()) {
+        double frame_time = GetFrameTime();
+        if (frame_time > 0.1) frame_time = 0.1;
+
+        accumulator += frame_time * ui.get_time_scale();
         // --- 1. INPUT ---
         Vector2 mouse = GetMousePosition();
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !ui.wants_mouse_capture()) {
@@ -34,7 +40,7 @@ int main() {
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) grabbedPoint = -1;
 
         // --- 2. FIZYKA ---
-        for (int step = 0; step < 8; ++step) {
+        while (accumulator >= my_engine.dt) {
             if (grabbedPoint != -1) {
                 my_engine.nodes[grabbedPoint].pos = {mouse.x, mouse.y};
                 my_engine.nodes[grabbedPoint].prev_pos = {mouse.x, mouse.y}; 
@@ -44,13 +50,14 @@ int main() {
                 my_engine.nodes[grabbedPoint].pos = {mouse.x, mouse.y};
                 my_engine.nodes[grabbedPoint].prev_pos = {mouse.x, mouse.y};
             }
+            accumulator -= my_engine.dt;
         }
 
         // --- 3. RENDER ---
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        renderer.draw_world(my_engine);
+        renderer.draw_world(my_engine, ui.get_curve_segments());
         ui.draw(my_engine);
 
         EndDrawing();

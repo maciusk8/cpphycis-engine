@@ -90,12 +90,10 @@ void Renderer::draw_filled_blob(const engine& phys_engine) const noexcept {
     }
 }
 
-void Renderer::draw_smooth_outline(const engine& phys_engine) const noexcept {
+void Renderer::draw_smooth_outline(const engine& phys_engine, int curve_segments) const noexcept {
     const auto& nodes = phys_engine.nodes;
     int n = static_cast<int>(nodes.size());
     if (n < 4) return;
-
-    const int segments = 8; 
 
 for (int i = 0; i < n; ++i) {
         vec2d p0 = nodes[(i - 1 + n) % n].pos;
@@ -105,8 +103,8 @@ for (int i = 0; i < n; ++i) {
 
         vec2d prev_point = p1;
 
-        for (int j = 1; j <= segments; ++j) {
-            float t = static_cast<float>(j) / static_cast<float>(segments);
+        for (int j = 1; j <= curve_segments; ++j) {
+            float t = static_cast<float>(j) / static_cast<float>(curve_segments);
             vec2d current_point = get_catmull_rom_point(p0, p1, p2, p3, t);
 
             DrawTriangle({p1.x, p1.y}, {current_point.x, current_point.y}, {prev_point.x, prev_point.y}, SKYBLUE);
@@ -124,8 +122,8 @@ for (int i = 0; i < n; ++i) {
 
         vec2d prev_point = p1;
 
-        for (int j = 1; j <= segments; ++j) {
-            float t = static_cast<float>(j) / static_cast<float>(segments);
+        for (int j = 1; j <= curve_segments; ++j) {
+            float t = static_cast<float>(j) / static_cast<float>(curve_segments);
             vec2d current_point = get_catmull_rom_point(p0, p1, p2, p3, t);
 
             DrawLineEx({prev_point.x, prev_point.y}, {current_point.x, current_point.y}, 6.0f, DARKBLUE);
@@ -134,9 +132,9 @@ for (int i = 0; i < n; ++i) {
     }
 }
 
-void Renderer::draw_world(const engine& phys_engine) const noexcept {
+void Renderer::draw_world(const engine& phys_engine, int curve_segments) const noexcept {
     draw_filled_blob(phys_engine);
-    draw_smooth_outline(phys_engine);
+    draw_smooth_outline(phys_engine, curve_segments);
 
     for (const auto& node : phys_engine.nodes) {
         DrawCircle(static_cast<int>(node.pos.x), static_cast<int>(node.pos.y), node.radius, DARKBLUE);

@@ -18,6 +18,17 @@ void UI::draw(engine& phys_engine) noexcept {
     rlImGuiBegin();
     ImGui::Begin("sim control panel");
 
+    ImGui::Text("engine performance");
+    if (ImGui::SliderInt("fps target", &target_fps, 30, 500)) {
+        SetTargetFPS(target_fps);
+    }
+    ImGui::SliderFloat("time step (dt)", &phys_engine.dt, 0.0001f, 0.01f, "%.4f");
+    ImGui::SliderFloat("time scale", &time_scale, 0.01f, 10.0f, "%.2fx");
+    ImGui::Separator();
+    ImGui::Text("render settings");
+    ImGui::SliderInt("curve resolution", &curve_segments, 1, 30);
+    ImGui::Separator();
+
     ImGui::Text("global properties");
     ImGui::SliderFloat("gravity y", &phys_engine.gravity.y, -2000.0f, 2000.0f);
     ImGui::SliderFloat("gravity x", &phys_engine.gravity.x, -2000.0f, 2000.0f);
