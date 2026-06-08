@@ -3,10 +3,9 @@
 #include <cmath>
 #include <cstddef>
 
-// CO potrzeba. Miec po kolei node'y na obwodzie 
-
-// Computes field using nodes on 2D grid
+// Computes field using nodes on 2D space
 // Shoelace Formula
+// required: Nodes according to the order of the perimeter
 float engine::get_area() const noexcept {
     float area = 0.0f;
     for (size_t i = 0; i < nodes.size(); ++i) {
@@ -45,7 +44,7 @@ void engine::apply_forces() noexcept {
 
 void engine::apply_pressure() noexcept {
     if (pressure_mult > 0.0f && nodes.size() >= 3) {
-        float current_area = get_volume();
+        float current_area = get_area();
         float pressure_force = (target_area - current_area) * pressure_mult;  // if < 0. object is "tight".
         for (size_t i = 0; i < nodes.size(); ++i) {
             size_t next_i = (i + 1) % nodes.size();
@@ -109,26 +108,4 @@ void engine::step() noexcept {
     apply_forces();
     apply_pressure();
     integrate();
-}
-
-void engine::create_blob(vec2d center, float radius, int num_points) noexcept {
-    // Generowanie punktów
-    for (int i = 0; i < num_points; ++i) {
-        float angle = i * (2.0f * 3.14159f / num_points);
-        vec2d pos = {center.x + std::cos(angle) * radius,
-                     center.y + std::sin(angle) * radius};
-        nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, 6.0f});
-    }
-
-    // Łączenie sprężyn na obwodzie
-    for (size_t i = 0; i < num_points; ++i) {
-        size_t next_i = (i + 1) % num_points;
-        vec2d pA = nodes[i].pos;
-        vec2d pB = nodes[next_i].pos;
-        float dist = (pA - pB).length();  // tu korzystamy z Twojego fajnego vec2d.length()
-        springs.push_back({i, next_i, dist, 1000.0f, 15.0f});
-    }
-
-    target_area = get_area();
-    pressure_mult = 1.0f;
 }
