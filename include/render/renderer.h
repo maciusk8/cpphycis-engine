@@ -4,6 +4,7 @@
 #include <raylib.h>
 #include <vector>
 #include "physics/engine.h"
+#include "physics/softBody.h"
 
 class Renderer {
 public:

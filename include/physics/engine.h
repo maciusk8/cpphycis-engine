@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "physics/softBody.h"
 #include "physics/spring.h"
 #include "physics/vec2d.h"
 
@@ -14,6 +15,7 @@ struct Node {
     float radius;
 };
 
+#include "physics/grid.h"
 struct engine {
     std::vector<Node> nodes;
     std::vector<Spring> springs;
@@ -27,10 +29,9 @@ struct engine {
     float get_volume() const noexcept;
     void step() noexcept;
     void apply_forces() noexcept;
-    void apply_pressure() noexcept;
+    void apply_pressure(const std::vector<SoftBody>& bodies) noexcept;
     void integrate() noexcept;
-
-    void create_blob(vec2d center, float radius, int num_points) noexcept;
+    void apply_collisions() noexcept;
 };
 
 #endif

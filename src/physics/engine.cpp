@@ -1,13 +1,17 @@
 #include "physics/engine.h"
 
 #include <cmath>
+#include <cstddef>
 
-// Computes field using nodes on 2D grid
+// Computes field using nodes on 2D space
 // Shoelace Formula
-float engine::get_volume() const noexcept {
+// required: Nodes according to the order of the perimeter
+float engine::get_area(size_t start, size_t end) const noexcept {
     float area = 0.0f;
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        size_t next_i = (i + 1) % nodes.size();
+    size_t count = end - start;
+    if (count < 3) return 0.0f;
+    for (size_t i = start; i < end; ++i) {
+        size_t next_i = start + ((i - start + 1) % count);
         area += (nodes[i].pos.x * nodes[next_i].pos.y - nodes[next_i].pos.x * nodes[i].pos.y);
     }
     return std::abs(area * 0.5f);
@@ -40,22 +44,25 @@ void engine::apply_forces() noexcept {
     }
 }
 
-void engine::apply_pressure() noexcept {
-    if (pressure_mult > 0.0f && nodes.size() >= 3) {
-        float current_area = get_volume();
-        float pressure_force = (target_area - current_area) * pressure_mult;  // if < 0. object is "tight".
-        for (size_t i = 0; i < nodes.size(); ++i) {
-            size_t next_i = (i + 1) % nodes.size();
-            vec2d pA = nodes[i].pos;
-            vec2d pB = nodes[next_i].pos;
+void engine::apply_pressure(const std::vector<SoftBody>& bodies) noexcept {
+    for (const auto& body : bodies) {
+        size_t count = body.hull_end - body.hull_start;
+        if (body.pressure_mult > 0.0f && count >= 3) {
+            float current_area = get_area(body.hull_start, body.hull_end);
+            float pressure_force = (body.target_area - current_area) * body.pressure_mult;
+            for (size_t i = body.hull_start; i < body.hull_end; ++i) {
+                size_t next_i = body.hull_start + ((i - body.hull_start + 1) % count);
+                vec2d pA = nodes[i].pos;
+                vec2d pB = nodes[next_i].pos;
 
-            vec2d edge = pB - pA;
-            float edge_len = edge.length();
-            if (edge_len == 0.0f) continue;
-            vec2d normal = {edge.y / edge_len, -edge.x / edge_len};
-            vec2d force = normal * (pressure_force * edge_len * 0.5f);
-            nodes[i].force += force;
-            nodes[next_i].force += force;
+                vec2d edge = pB - pA;
+                float edge_len = edge.length();
+                if (edge_len == 0.0f) continue;
+                vec2d normal = {edge.y / edge_len, -edge.x / edge_len};
+                vec2d force = normal * (pressure_force * edge_len * 0.5f);
+                nodes[i].force += force;
+                nodes[next_i].force += force;
+            }
         }
     }
 }
@@ -99,30 +106,47 @@ void engine::integrate() noexcept {
     }
 }
 
-void engine::step() noexcept {
-    apply_forces();
-    apply_pressure();
-    integrate();
+void engine::apply_collisions() noexcept {
+    constexpr float NODE_RADIUS = 6.0f;
+    constexpr float DIAMETER = NODE_RADIUS * 2.0f;
+    constexpr float DIAMETER_SQ = DIAMETER * DIAMETER;
+    grid.build(nodes);
+    int num_nodes = static_cast<int>(nodes.size());
+
+    for (int i = 0; i < num_nodes; ++i) {
+        vec2d pA = nodes[i].pos;
+
+        int cx = std::clamp(static_cast<int>(pA.x / grid.cell_size), 0, grid.cols - 1);
+        int cy = std::clamp(static_cast<int>(pA.y / grid.cell_size), 0, grid.rows - 1);
+        for (int dy = -1; dy <= 1; ++dy) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                int nx = cx + dx;
+                int ny = cy + dy;
+                if (nx < 0 || nx >= grid.cols || ny < 0 || ny >= grid.rows) continue;
+                int cell_idx = ny * grid.cols + nx;
+                for (int j : grid.cells[cell_idx]) {
+                    if (i < j) {
+                        vec2d diff = pA - nodes[j].pos;
+                        float dist_sq = diff.x * diff.x + diff.y * diff.y;
+
+                        if (dist_sq < DIAMETER_SQ && dist_sq > 0.00001f) {
+                            float dist = std::sqrt(dist_sq);
+                            float overlap = DIAMETER - dist;
+                            vec2d normal = diff * (1.0f / dist);
+                            vec2d correction = normal * (overlap * 0.5f);
+                            nodes[i].pos = nodes[i].pos + correction;
+                            nodes[j].pos = nodes[j].pos - correction;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-void engine::create_blob(vec2d center, float radius, int num_points) noexcept {
-    // Generowanie punktów
-    for (int i = 0; i < num_points; ++i) {
-        float angle = i * (2.0f * 3.14159f / num_points);
-        vec2d pos = {center.x + std::cos(angle) * radius,
-                     center.y + std::sin(angle) * radius};
-        nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, 6.0f});
-    }
-
-    // Łączenie sprężyn na obwodzie
-    for (int i = 0; i < num_points; ++i) {
-        int next_i = (i + 1) % num_points;
-        vec2d pA = nodes[i].pos;
-        vec2d pB = nodes[next_i].pos;
-        float dist = (pA - pB).length();
-        springs.push_back({i, next_i, dist, 1000.0f, 15.0f});
-    }
-
-    target_area = get_volume();
-    pressure_mult = 1.0f;
+void engine::step(const std::vector<SoftBody>& bodies) noexcept {
+    apply_forces();
+    apply_pressure(bodies);
+    integrate();
+    apply_collisions();
 }

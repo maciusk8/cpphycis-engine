@@ -17,7 +17,7 @@ vec2d Renderer::get_catmull_rom_point(vec2d p0, vec2d p1, vec2d p2, vec2d p3, fl
     };
 }
 
-float Renderer::cross_product(vec2d a, vec2d b, vec2d c) const noexcept {
+Renderer::cross_product(vec2d a, vec2d b, vec2d c) const noexcept {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
