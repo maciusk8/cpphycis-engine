@@ -32,6 +32,7 @@ endif()
 set(SOURCES
     src/main.cpp
     src/physics/engine.cpp
+    src/physics/softBodyFactory.cpp
     src/render/renderer.cpp
     src/ui/ui.cpp
     

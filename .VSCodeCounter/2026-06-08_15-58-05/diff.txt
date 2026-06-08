@@ -1,0 +1,48 @@
+Date : 2026-06-08 15:58:05
+Directory : /Users/mateuszwrobel/Documents/Sem4/cpp/projekt
+Total : 9 files,  109 codes, 42 comments, 19 blanks, all 170 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| C++      |          7 |        107 |         42 |         19 |        168 |
+| CMake    |          1 |          1 |          0 |          0 |          1 |
+| C        |          1 |          1 |          0 |          0 |          1 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                              | files      | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                 |          9 |        109 |         42 |         19 |        170 |
+| . (Files)                                                                                                         |          1 |          1 |          0 |          0 |          1 |
+| build                                                                                                             |          1 |          1 |          0 |          0 |          1 |
+| build/_deps                                                                                                       |          1 |          1 |          0 |          0 |          1 |
+| build/_deps/raylib-src                                                                                            |          1 |          1 |          0 |          0 |          1 |
+| build/_deps/raylib-src/examples                                                                                   |          1 |          1 |          0 |          0 |          1 |
+| build/_deps/raylib-src/examples/textures                                                                          |          1 |          1 |          0 |          0 |          1 |
+| include                                                                                                           |          3 |         33 |         -1 |          6 |         38 |
+| include/physics                                                                                                   |          2 |         32 |         -1 |          6 |         37 |
+| include/render                                                                                                    |          1 |          1 |          0 |          0 |          1 |
+| src                                                                                                               |          4 |         74 |         43 |         13 |        130 |
+| src (Files)                                                                                                       |          1 |         29 |          0 |          5 |         34 |
+| src/physics                                                                                                       |          2 |         40 |         42 |          8 |         90 |
+| src/render                                                                                                        |          1 |          5 |          1 |          0 |          6 |
++-------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                          | language | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| /Users/mateuszwrobel/Documents/Sem4/cpp/projekt/CMakeLists.txt                                                    | CMake    |          1 |          0 |          0 |          1 |
+| /Users/mateuszwrobel/Documents/Sem4/cpp/projekt/build/_deps/raylib-src/examples/textures/textures_image_drawing.c | C        |          1 |          0 |          0 |          1 |
+| /Users/mateuszwrobel/Documents/Sem4/cpp/projekt/include/physics/engine.h                                          | C++      |          1 |         -1 |         -2 |         -2 |
+| /Users/mateuszwrobel/Documents/Sem4/cpp/projekt/include/physics/grid.h                                            | C++      |         31 |          0 |          8 |         39 |
+| /Users/mateuszwrobel/Documents/Sem4/cpp/projekt/include/render/renderer.h                                         | C++      |          1 |          0 |          0 |          1 |
+| /Users/mateuszwrobel/Documents/Sem4/cpp/projekt/src/main.cpp                                                      | C++      |         29 |          0 |          5 |         34 |
+| /Users/mateuszwrobel/Documents/Sem4/cpp/projekt/src/physics/engine.cpp                                            | C++      |         40 |          0 |          4 |         44 |
+| /Users/mateuszwrobel/Documents/Sem4/cpp/projekt/src/physics/softBodyFactory.cpp                                   | C++      |          0 |         42 |          4 |         46 |
+| /Users/mateuszwrobel/Documents/Sem4/cpp/projekt/src/render/renderer.cpp                                           | C++      |          5 |          1 |          0 |          6 |
+| Total                                                                                                             |          |        109 |         42 |         19 |        170 |
++-------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

@@ -35,7 +35,7 @@ void UI::draw(engine& phys_engine) noexcept {
     
     ImGui::Separator();
     ImGui::Text("blob properties");
-    ImGui::SliderFloat("pressure", &phys_engine.pressure_mult, 0.0f, 30.0f);
+    // ImGui::SliderFloat("pressure", &phys_engine.pressure_mult, 0.0f, 30.0f);
     
     ImGui::Separator();
     ImGui::Text("spawner settings");
@@ -45,7 +45,7 @@ void UI::draw(engine& phys_engine) noexcept {
     if (ImGui::Button("blob spawn")) {
         phys_engine.nodes.clear();
         phys_engine.springs.clear();
-        phys_engine.create_blob({600.0f, 400.0f}, next_radius, next_num_points);
+        // phys_engine.create_blob({600.0f, 400.0f}, next_radius, next_num_points);
     }
 
     ImGui::End();
