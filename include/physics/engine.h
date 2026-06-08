@@ -27,6 +27,7 @@ struct engine {
     float get_volume() const noexcept;
     void step() noexcept;
     void apply_forces() noexcept;
+    void apply_pressure() noexcept;
     void integrate() noexcept;
 
     void create_blob(vec2d center, float radius, int num_points) noexcept;
