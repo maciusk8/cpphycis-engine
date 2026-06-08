@@ -1,26 +1,32 @@
 #include "render/renderer.h"
 
-void Renderer::draw_world(const engine& phys_engine) const noexcept {
+void Renderer::draw_world(const engine& phys_engine, const std::vector<SoftBody>& bodies) const noexcept {
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    if (!phys_engine.nodes.empty()) {
-        std::vector<Vector2> poly_points;
-        vec2d center_pos = {0.0f, 0.0f};
+    // Draw solid shapes for bodies that have a closed hull
+    for (const auto& body : bodies) {
+        if (body.type == BodyType::Ball || body.type == BodyType::Balloon) {
+            if (body.hull_start < body.hull_end) {
+                std::vector<Vector2> poly_points;
+                vec2d center_pos = {0.0f, 0.0f};
 
-        for (const auto& n : phys_engine.nodes) {
-            center_pos = center_pos + n.pos;
+                for (size_t i = body.hull_start; i < body.hull_end; ++i) {
+                    center_pos = center_pos + phys_engine.nodes[i].pos;
+                }
+                float count = static_cast<float>(body.hull_end - body.hull_start);
+                center_pos = center_pos * (1.0f / count);
+
+                poly_points.push_back({center_pos.x, center_pos.y});
+
+                for (int i = static_cast<int>(body.hull_end) - 1; i >= static_cast<int>(body.hull_start); --i) {
+                    poly_points.push_back({phys_engine.nodes[i].pos.x, phys_engine.nodes[i].pos.y});
+                }
+                poly_points.push_back({phys_engine.nodes[body.hull_end - 1].pos.x, phys_engine.nodes[body.hull_end - 1].pos.y});
+
+                DrawTriangleFan(poly_points.data(), static_cast<int>(poly_points.size()), SKYBLUE);
+            }
         }
-        center_pos = center_pos * (1.0f / static_cast<float>(phys_engine.nodes.size()));
-
-        poly_points.push_back({center_pos.x, center_pos.y});
-
-        for (int i = static_cast<int>(phys_engine.nodes.size()) - 1; i >= 0; --i) {
-            poly_points.push_back({phys_engine.nodes[i].pos.x, phys_engine.nodes[i].pos.y});
-        }
-        poly_points.push_back({phys_engine.nodes.back().pos.x, phys_engine.nodes.back().pos.y});
-
-        DrawTriangleFan(poly_points.data(), static_cast<int>(poly_points.size()), SKYBLUE);
     }
 
     for (const auto& spring : phys_engine.springs) {

@@ -4,12 +4,13 @@
 #include <raylib.h>
 #include <vector>
 #include "physics/engine.h"
+#include "physics/softBody.h"
 
 class Renderer {
 public:
     Renderer() = default;
     
-    void draw_world(const engine& phys_engine) const noexcept;
+    void draw_world(const engine& phys_engine, const std::vector<SoftBody>& bodies) const noexcept;
 
 private:
     void draw_smooth_blob(const engine& phys_engine) const noexcept;

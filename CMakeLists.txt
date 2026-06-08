@@ -21,6 +21,7 @@ set(SOURCES
     src/main.cpp
     src/physics/engine.cpp
     src/render/renderer.cpp
+    src/physics/softBodyFactory.cpp
 )
 
 add_executable(silnik_dod ${SOURCES})
