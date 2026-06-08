@@ -19,11 +19,15 @@ struct Node {
 struct engine {
     std::vector<Node> nodes;
     std::vector<Spring> springs;
-    constexpr static float dt = 0.002f;  // 8x mniejszy krok dla ogromnej stabilności!
-    SpatialGrid grid{1200.0f, 800.0f, 12.0f};
+    float dt = 0.002f; // 8x mniejszy krok dla ogromnej stabilności!
 
-    float get_area(size_t start, size_t end) const noexcept;
-    void step(const std::vector<SoftBody>& bodies) noexcept;
+    // Zmienne ciśnienia (Pressure Soft Body)
+    vec2d gravity = {0.0f, 1000.0f};
+    float target_area = 0.0f;
+    float pressure_mult = 0.0f;
+
+    float get_volume() const noexcept;
+    void step() noexcept;
     void apply_forces() noexcept;
     void apply_pressure(const std::vector<SoftBody>& bodies) noexcept;
     void integrate() noexcept;

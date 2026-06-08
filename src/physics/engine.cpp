@@ -69,9 +69,6 @@ void engine::apply_pressure(const std::vector<SoftBody>& bodies) noexcept {
 
 // Całkowanie Verleta
 void engine::integrate() noexcept {
-    // Siła grawitacji
-    const vec2d gravity = {0.0f, 1000.0f};
-
     for (auto& node : nodes) {
         // Obliczenie przyspieszenia (a = F / m + grawitacja)
         vec2d acc = (node.force * (1.0f / node.mass)) + gravity;
