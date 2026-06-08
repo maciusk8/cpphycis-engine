@@ -92,14 +92,7 @@ void engine::integrate() noexcept {
             node.prev_pos.y = node.pos.y;              // zerowanie prędkości pionowej (lub odbicie)
         }
 
-        // Kolizja ze ścianami
-        if (node.pos.x < node.radius) {
-            node.pos.x = node.radius;
-            node.prev_pos.x = node.pos.x;
-        } else if (node.pos.x > 1200.0f - node.radius) {
-            node.pos.x = 1200.0f - node.radius;
-            node.prev_pos.x = node.pos.x;
-        }
+        // Kolizja ze ścianami USUNIĘTA - brak ograniczeń poziomo
 
         // Wyzerowanie sił na następną klatkę
         node.force = {0.0f, 0.0f};
@@ -107,37 +100,54 @@ void engine::integrate() noexcept {
 }
 
 void engine::apply_collisions() noexcept {
-    constexpr float NODE_RADIUS = 6.0f;
-    constexpr float DIAMETER = NODE_RADIUS * 2.0f;
-    constexpr float DIAMETER_SQ = DIAMETER * DIAMETER;
+    float diameter = node_radius * 2.0f;
+    float diameter_sq = diameter * diameter;
+    
+    if (grid.cell_size < diameter) {
+        grid = SpatialGrid(1200.0f, 800.0f, diameter);
+    }
+    
     grid.build(nodes);
     int num_nodes = static_cast<int>(nodes.size());
 
     for (int i = 0; i < num_nodes; ++i) {
         vec2d pA = nodes[i].pos;
 
-        int cx = std::clamp(static_cast<int>(pA.x / grid.cell_size), 0, grid.cols - 1);
-        int cy = std::clamp(static_cast<int>(pA.y / grid.cell_size), 0, grid.rows - 1);
-        for (int dy = -1; dy <= 1; ++dy) {
-            for (int dx = -1; dx <= 1; ++dx) {
-                int nx = cx + dx;
-                int ny = cy + dy;
-                if (nx < 0 || nx >= grid.cols || ny < 0 || ny >= grid.rows) continue;
-                int cell_idx = ny * grid.cols + nx;
-                for (int j : grid.cells[cell_idx]) {
-                    if (i < j) {
-                        vec2d diff = pA - nodes[j].pos;
-                        float dist_sq = diff.x * diff.x + diff.y * diff.y;
+        int cx = static_cast<int>(std::floor(pA.x / grid.cell_size));
+        int cy = static_cast<int>(std::floor(pA.y / grid.cell_size));
+        
+        // Optymalizacja: Sprawdzamy tylko 5 komórek "do przodu", by nie dublować par
+        const int offsets[5][2] = {
+            {0, 0}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}
+        };
 
-                        if (dist_sq < DIAMETER_SQ && dist_sq > 0.00001f) {
-                            float dist = std::sqrt(dist_sq);
-                            float overlap = DIAMETER - dist;
-                            vec2d normal = diff * (1.0f / dist);
-                            vec2d correction = normal * (overlap * 0.5f);
-                            nodes[i].pos = nodes[i].pos + correction;
-                            nodes[j].pos = nodes[j].pos - correction;
-                        }
-                    }
+        for (int k = 0; k < 5; ++k) {
+            int nx = cx + offsets[k][0];
+            int ny = cy + offsets[k][1];
+            unsigned int hash = grid.get_hash(nx, ny);
+            
+            int start = grid.starts[hash];
+            int count = grid.counts[hash];
+            
+            for (int idx = 0; idx < count; ++idx) {
+                int j = grid.entries[start + idx];
+                
+                // Jeśli jesteśmy w tej samej komórce, sprawdzamy tylko i < j by uniknąć podwójnej pracy i kolizji z samym sobą
+                if (k == 0 && i >= j) continue;
+                
+                // Zabezpieczenie przed podwójnym sprawdzeniem dla kolizji hashy z różnych komórek
+                if (k > 0 && i == j) continue;
+
+                vec2d diff = pA - nodes[j].pos;
+                float dist_sq = diff.x * diff.x + diff.y * diff.y;
+
+                if (dist_sq < diameter_sq && dist_sq > 0.00001f) {
+                    float dist = std::sqrt(dist_sq);
+                    float overlap = diameter - dist;
+                    vec2d normal = diff * (1.0f / dist);
+                    vec2d correction = normal * (overlap * 0.5f * collision_stiffness);
+                    nodes[i].pos = nodes[i].pos + correction;
+                    nodes[j].pos = nodes[j].pos - correction;
                 }
             }
         }

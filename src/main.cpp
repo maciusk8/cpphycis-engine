@@ -54,17 +54,55 @@ int main() {
     //akumulator czasu
     double accumulator = 0.0;
 
+    Camera2D camera = { 0 };
+    camera.target = { 600.0f, 800.0f };
+    camera.offset = { 600.0f, 800.0f };
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
+
     while (!WindowShouldClose()) {
         double frame_time = GetFrameTime();
         if (frame_time > 0.1) frame_time = 0.1;
 
         accumulator += frame_time * ui.get_time_scale();
+        
+        // update camera target zoom
+        float min_y = 800.0f;
+        float min_x = 600.0f, max_x = 600.0f;
+        if (!my_engine.nodes.empty()) {
+            min_x = my_engine.nodes[0].pos.x;
+            max_x = my_engine.nodes[0].pos.x;
+        }
+        for (const auto& node : my_engine.nodes) {
+            if (node.pos.y < min_y) min_y = node.pos.y;
+            if (node.pos.x < min_x) min_x = node.pos.x;
+            if (node.pos.x > max_x) max_x = node.pos.x;
+        }
+        
+        float target_zoom_y = 1.0f;
+        if (min_y < 100.0f) {
+            target_zoom_y = 800.0f / (800.0f - min_y + 100.0f);
+        }
+        float width_needed = max_x - min_x + 200.0f;
+        float target_zoom_x = 1200.0f / width_needed;
+        
+        float target_zoom = std::fmin(target_zoom_x, target_zoom_y);
+        if (target_zoom > 1.0f) target_zoom = 1.0f;
+        
+        camera.zoom += (target_zoom - camera.zoom) * 5.0f * GetFrameTime();
+        
+        float center_x = (min_x + max_x) * 0.5f;
+        camera.target.x += (center_x - camera.target.x) * 5.0f * GetFrameTime();
+        camera.offset.x = 600.0f; // Keep it centered relative to the screen
+
         // --- 1. INPUT ---
         Vector2 mouse = GetMousePosition();
+        Vector2 world_mouse = GetScreenToWorld2D(mouse, camera);
+
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !ui.wants_mouse_capture()) {
             for (size_t i = 0; i < my_engine.nodes.size(); ++i) {
-                float dx = my_engine.nodes[i].pos.x - mouse.x;
-                float dy = my_engine.nodes[i].pos.y - mouse.y;
+                float dx = my_engine.nodes[i].pos.x - world_mouse.x;
+                float dy = my_engine.nodes[i].pos.y - world_mouse.y;
                 if (std::sqrt(dx * dx + dy * dy) < my_engine.nodes[i].radius * 3.0f) {
                     grabbedPoint = static_cast<int>(i);
                     break;
@@ -76,13 +114,13 @@ int main() {
         // --- 2. FIZYKA ---
         while (accumulator >= my_engine.dt) {
             if (grabbedPoint != -1) {
-                my_engine.nodes[grabbedPoint].pos = {mouse.x, mouse.y};
-                my_engine.nodes[grabbedPoint].prev_pos = {mouse.x, mouse.y}; 
+                my_engine.nodes[grabbedPoint].pos = {world_mouse.x, world_mouse.y};
+                my_engine.nodes[grabbedPoint].prev_pos = {world_mouse.x, world_mouse.y}; 
             }
             my_engine.step(bodies);
             if (grabbedPoint != -1) {
-                my_engine.nodes[grabbedPoint].pos = {mouse.x, mouse.y};
-                my_engine.nodes[grabbedPoint].prev_pos = {mouse.x, mouse.y};
+                my_engine.nodes[grabbedPoint].pos = {world_mouse.x, world_mouse.y};
+                my_engine.nodes[grabbedPoint].prev_pos = {world_mouse.x, world_mouse.y};
             }
             accumulator -= my_engine.dt;
         }
@@ -91,8 +129,15 @@ int main() {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        renderer.draw_world(my_engine, ui.get_curve_segments());
-        ui.draw(my_engine);
+        BeginMode2D(camera);
+        renderer.draw_world(my_engine, bodies, ui.get_curve_segments());
+        EndMode2D();
+        
+        DrawText("Przeciagnij wezly myszka! (Pressure Soft Body)", 10, 10, 20, DARKGRAY);
+        DrawFPS(10, 40);
+        DrawText(TextFormat("Bodies: %d", static_cast<int>(bodies.size())), 10, 70, 20, DARKGRAY);
+
+        ui.draw(my_engine, bodies);
 
         EndDrawing();
     }

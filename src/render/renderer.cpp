@@ -30,11 +30,11 @@ bool Renderer::is_point_in_triangle(vec2d p, vec2d a, vec2d b, vec2d c) const no
            (w1 < 0.0f && w2 < 0.0f && w3 < 0.0f);
 }
 
-void Renderer::draw_filled_blob(const engine& phys_engine) const noexcept {
+void Renderer::draw_filled_blob(const engine& phys_engine, const SoftBody& body) const noexcept {
     std::vector<vec2d> poly;
     
     // CCW
-    for (int i = static_cast<int>(phys_engine.nodes.size()) - 1; i >= 0; --i) {
+    for (int i = static_cast<int>(body.hull_end) - 1; i >= static_cast<int>(body.hull_start); --i) {
         poly.push_back(phys_engine.nodes[i].pos);
     }
 
@@ -90,16 +90,21 @@ void Renderer::draw_filled_blob(const engine& phys_engine) const noexcept {
     }
 }
 
-void Renderer::draw_smooth_outline(const engine& phys_engine, int curve_segments) const noexcept {
-    const auto& nodes = phys_engine.nodes;
-    int n = static_cast<int>(nodes.size());
+void Renderer::draw_smooth_outline(const engine& phys_engine, const SoftBody& body, int curve_segments) const noexcept {
+    int start = static_cast<int>(body.hull_start);
+    int end = static_cast<int>(body.hull_end);
+    int n = end - start;
     if (n < 4) return;
+    
+    auto get_node = [&](int i) -> const Node& {
+        return phys_engine.nodes[start + ((i + n) % n)];
+    };
 
-for (int i = 0; i < n; ++i) {
-        vec2d p0 = nodes[(i - 1 + n) % n].pos;
-        vec2d p1 = nodes[i].pos;
-        vec2d p2 = nodes[(i + 1) % n].pos;
-        vec2d p3 = nodes[(i + 2) % n].pos;
+    for (int i = 0; i < n; ++i) {
+        vec2d p0 = get_node(i - 1).pos;
+        vec2d p1 = get_node(i).pos;
+        vec2d p2 = get_node(i + 1).pos;
+        vec2d p3 = get_node(i + 2).pos;
 
         vec2d prev_point = p1;
 
@@ -115,10 +120,10 @@ for (int i = 0; i < n; ++i) {
     }
 
     for (int i = 0; i < n; ++i) {
-        vec2d p0 = nodes[(i - 1 + n) % n].pos;
-        vec2d p1 = nodes[i].pos;
-        vec2d p2 = nodes[(i + 1) % n].pos;
-        vec2d p3 = nodes[(i + 2) % n].pos;
+        vec2d p0 = get_node(i - 1).pos;
+        vec2d p1 = get_node(i).pos;
+        vec2d p2 = get_node(i + 1).pos;
+        vec2d p3 = get_node(i + 2).pos;
 
         vec2d prev_point = p1;
 
@@ -132,13 +137,22 @@ for (int i = 0; i < n; ++i) {
     }
 }
 
-void Renderer::draw_world(const engine& phys_engine, int curve_segments) const noexcept {
-    draw_filled_blob(phys_engine);
-    draw_smooth_outline(phys_engine, curve_segments);
+void Renderer::draw_world(const engine& phys_engine, const std::vector<SoftBody>& bodies, int curve_segments) const noexcept {
+    // Draw all springs to visualize Cloth/Jello/Rope structures
+    for (const auto& spring : phys_engine.springs) {
+        vec2d pA = phys_engine.nodes[spring.idA].pos;
+        vec2d pB = phys_engine.nodes[spring.idB].pos;
+        DrawLineEx({pA.x, pA.y}, {pB.x, pB.y}, 2.0f, DARKGRAY);
+    }
+
+    for (const auto& body : bodies) {
+        if (body.type == BodyType::Balloon || body.type == BodyType::Ball) {
+            draw_filled_blob(phys_engine, body);
+            draw_smooth_outline(phys_engine, body, curve_segments);
+        }
+    }
 
     for (const auto& node : phys_engine.nodes) {
         DrawCircle(static_cast<int>(node.pos.x), static_cast<int>(node.pos.y), node.radius, DARKBLUE);
     }
-
-    DrawText("Przeciagnij wezly myszka! (Pressure Soft Body)", 10, 10, 20, DARKGRAY);
 }

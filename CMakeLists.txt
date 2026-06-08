@@ -4,6 +4,10 @@ project(cpphysics-engine CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 include(FetchContent)
 FetchContent_Declare(
     raylib

@@ -10,28 +10,52 @@
 
 struct SpatialGrid {
     float cell_size;
-    int cols;
-    int rows;
+    int table_size;
+    
+    std::vector<int> counts;
+    std::vector<int> starts;
+    std::vector<int> entries;
 
-    std::vector<std::vector<int>> cells;
-
-    SpatialGrid(float screen_width, float screen_height, float cell_size) {
+    SpatialGrid(float /*dummy_w*/, float /*dummy_h*/, float cell_size) {
         this->cell_size = cell_size;
-        this->cols = static_cast<int>(std::ceil(screen_width / cell_size));
-        this->rows = static_cast<int>(std::ceil(screen_height / cell_size));
-        cells.resize(cols * rows);
+        this->table_size = 4093; // Prime number
+        counts.resize(table_size, 0);
+        starts.resize(table_size, 0);
+    }
+
+    inline unsigned int get_hash(int cx, int cy) const noexcept {
+        return (static_cast<unsigned int>(cx * 73856093) ^ static_cast<unsigned int>(cy * 19349663)) % table_size;
     }
 
     void build(const std::vector<Node>& nodes) noexcept {
-        for (auto& cell : cells) {
-            cell.clear();
+        int n = static_cast<int>(nodes.size());
+        if (entries.size() < static_cast<size_t>(n)) {
+            entries.resize(n);
         }
 
-        for (int i = 0; i < static_cast<int>(nodes.size()); ++i) {
-            int cx = std::clamp(static_cast<int>(nodes[i].pos.x / cell_size), 0, cols - 1);
-            int cy = std::clamp(static_cast<int>(nodes[i].pos.y / cell_size), 0, rows - 1);
-            int cell_idx = cy * cols + cx;
-            cells[cell_idx].push_back(i);
+        std::fill(counts.begin(), counts.end(), 0);
+        std::vector<unsigned int> hashes(n);
+
+        for (int i = 0; i < n; ++i) {
+            int cx = static_cast<int>(std::floor(nodes[i].pos.x / cell_size));
+            int cy = static_cast<int>(std::floor(nodes[i].pos.y / cell_size));
+            unsigned int hash = get_hash(cx, cy);
+            hashes[i] = hash;
+            counts[hash]++;
+        }
+
+        int current_start = 0;
+        for (int i = 0; i < table_size; ++i) {
+            starts[i] = current_start;
+            current_start += counts[i];
+            counts[i] = 0;
+        }
+
+        for (int i = 0; i < n; ++i) {
+            unsigned int hash = hashes[i];
+            int offset = starts[hash] + counts[hash];
+            entries[offset] = i;
+            counts[hash]++;
         }
     }
 };
