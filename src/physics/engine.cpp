@@ -1,10 +1,13 @@
 #include "physics/engine.h"
 
 #include <cmath>
+#include <cstddef>
+
+// CO potrzeba. Miec po kolei node'y na obwodzie 
 
 // Computes field using nodes on 2D grid
 // Shoelace Formula
-float engine::get_volume() const noexcept {
+float engine::get_area() const noexcept {
     float area = 0.0f;
     for (size_t i = 0; i < nodes.size(); ++i) {
         size_t next_i = (i + 1) % nodes.size();
@@ -118,14 +121,14 @@ void engine::create_blob(vec2d center, float radius, int num_points) noexcept {
     }
 
     // Łączenie sprężyn na obwodzie
-    for (int i = 0; i < num_points; ++i) {
-        int next_i = (i + 1) % num_points;
+    for (size_t i = 0; i < num_points; ++i) {
+        size_t next_i = (i + 1) % num_points;
         vec2d pA = nodes[i].pos;
         vec2d pB = nodes[next_i].pos;
         float dist = (pA - pB).length();  // tu korzystamy z Twojego fajnego vec2d.length()
         springs.push_back({i, next_i, dist, 1000.0f, 15.0f});
     }
 
-    target_area = get_volume();
+    target_area = get_area();
     pressure_mult = 1.0f;
 }

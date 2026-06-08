@@ -23,7 +23,7 @@ struct engine {
     float target_area = 0.0f;
     float pressure_mult = 0.0f;
 
-    float get_volume() const noexcept;
+    float get_area() const noexcept;
     void step() noexcept;
     void apply_forces() noexcept;
     void apply_pressure() noexcept;
