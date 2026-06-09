@@ -99,14 +99,21 @@ int main() {
         Vector2 mouse = GetMousePosition();
         Vector2 world_mouse = GetScreenToWorld2D(mouse, camera);
 
+        bool clicked_on_node = false;
+
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !ui.wants_mouse_capture()) {
             for (size_t i = 0; i < my_engine.nodes.size(); ++i) {
                 float dx = my_engine.nodes[i].pos.x - world_mouse.x;
                 float dy = my_engine.nodes[i].pos.y - world_mouse.y;
                 if (std::sqrt(dx * dx + dy * dy) < my_engine.nodes[i].radius * 3.0f) {
                     grabbedPoint = static_cast<int>(i);
+                    clicked_on_node = true;
                     break;
                 }
+            }
+            
+            if (!clicked_on_node && ui.is_spawn_on_click_enabled()) {
+                ui.spawn_current_selection(my_engine, bodies, world_mouse.x, world_mouse.y);
             }
         }
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) grabbedPoint = -1;

@@ -44,39 +44,13 @@ void UI::draw(engine& phys_engine, std::vector<SoftBody>& bodies) noexcept {
     ImGui::InputInt("spawn count", &spawn_count);
     if (spawn_count < 1) spawn_count = 1;
     
-    if (ImGui::Button("Spawn selected body")) {
+    ImGui::Checkbox("Spawn on click (world)", &spawn_on_click);
+    
+    if (ImGui::Button("Spawn selected body (random center)")) {
         for (int i = 0; i < spawn_count; ++i) {
-            factory::BodyConfig config;
             float offset_x = static_cast<float>(rand() % 600 - 300);
             float offset_y = static_cast<float>(rand() % 400 - 200);
-            config.start_pos = {600.0f + offset_x, 200.0f + offset_y};
-
-            BodyType type = static_cast<BodyType>(selected_body_type);
-            switch (type) {
-                case BodyType::Rope:
-                    config.num_nodes = 15;
-                    config.spacing = 25.0f;
-                    break;
-                case BodyType::Cloth:
-                    config.cols = 8;
-                    config.rows = 8;
-                    config.spacing = 15.0f;
-                    break;
-                case BodyType::Jello:
-                    config.cols = 6;
-                    config.rows = 6;
-                    config.spacing = 20.0f;
-                    break;
-                case BodyType::Balloon:
-                    config.num_nodes = 20;
-                    config.radius = 70.0f;
-                    break;
-                case BodyType::Ball:
-                    config.num_nodes = 16;
-                    config.radius = 50.0f;
-                    break;
-            }
-            bodies.push_back(factory::create_body(type, phys_engine, config));
+            spawn_current_selection(phys_engine, bodies, 600.0f + offset_x, 200.0f + offset_y);
         }
     }
 
@@ -88,4 +62,36 @@ void UI::draw(engine& phys_engine, std::vector<SoftBody>& bodies) noexcept {
 
     ImGui::End();
     rlImGuiEnd();
+}
+
+void UI::spawn_current_selection(engine& phys_engine, std::vector<SoftBody>& bodies, float x, float y) noexcept {
+    factory::BodyConfig config;
+    config.start_pos = {x, y};
+
+    BodyType type = static_cast<BodyType>(selected_body_type);
+    switch (type) {
+        case BodyType::Rope:
+            config.num_nodes = 15;
+            config.spacing = 25.0f;
+            break;
+        case BodyType::Cloth:
+            config.cols = 8;
+            config.rows = 8;
+            config.spacing = 15.0f;
+            break;
+        case BodyType::Jello:
+            config.cols = 6;
+            config.rows = 6;
+            config.spacing = 20.0f;
+            break;
+        case BodyType::Balloon:
+            config.num_nodes = 20;
+            config.radius = 70.0f;
+            break;
+        case BodyType::Ball:
+            config.num_nodes = 16;
+            config.radius = 50.0f;
+            break;
+    }
+    bodies.push_back(factory::create_body(type, phys_engine, config));
 }

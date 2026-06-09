@@ -17,9 +17,12 @@ public:
     int get_curve_segments() const noexcept { return curve_segments; }
     float get_time_scale() const noexcept { return time_scale; }
 
+    bool is_spawn_on_click_enabled() const noexcept { return spawn_on_click; }
+    void spawn_current_selection(engine& phys_engine, std::vector<SoftBody>& bodies, float x, float y) noexcept;
 private:
     int selected_body_type = 0;
     int spawn_count = 1;
+    bool spawn_on_click = false;
 
     int target_fps = 240;
     int curve_segments = 8;
