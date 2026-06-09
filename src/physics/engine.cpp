@@ -70,6 +70,12 @@ void engine::apply_pressure(const std::vector<SoftBody>& bodies) noexcept {
 // Całkowanie Verleta
 void engine::integrate() noexcept {
     for (auto& node : nodes) {
+        if (node.mass == 0.0f) {
+            node.force = {0.0f, 0.0f};
+            node.pos = node.prev_pos;
+            continue;
+        }
+
         // Obliczenie przyspieszenia (a = F / m + grawitacja)
         vec2d acc = (node.force * (1.0f / node.mass)) + gravity;
 
@@ -145,9 +151,20 @@ void engine::apply_collisions() noexcept {
                     float dist = std::sqrt(dist_sq);
                     float overlap = diameter - dist;
                     vec2d normal = diff * (1.0f / dist);
-                    vec2d correction = normal * (overlap * 0.5f * collision_stiffness);
-                    nodes[i].pos = nodes[i].pos + correction;
-                    nodes[j].pos = nodes[j].pos - correction;
+                    
+                    float wA = (nodes[i].mass == 0.0f) ? 0.0f : 1.0f;
+                    float wB = (nodes[j].mass == 0.0f) ? 0.0f : 1.0f;
+                    float wSum = wA + wB;
+                    
+                    if (wSum > 0.0f) {
+                        float ratioA = wA / wSum;
+                        float ratioB = wB / wSum;
+                        
+                        vec2d correction = normal * (overlap * collision_stiffness);
+                        
+                        nodes[i].pos = nodes[i].pos + (correction * ratioA);
+                        nodes[j].pos = nodes[j].pos - (correction * ratioB);
+                    }
                 }
             }
         }

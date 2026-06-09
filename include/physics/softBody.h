@@ -2,6 +2,7 @@
 #define SOFT_BODY_H
 
 #include <cstddef>
+#include "physics/vec2d.h"
 
 
 enum class BodyType {
@@ -37,5 +38,6 @@ struct SoftBody {
     size_t hull_end;
     float target_area = 0.0f;
     float pressure_mult = 0.0f;
+    SimColor color;
 };
 #endif  // SoftBody

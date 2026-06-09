@@ -13,6 +13,7 @@ struct Node {
     vec2d force;
     float mass;
     float radius;
+    SimColor color;
 };
 
 #include "physics/grid.h"

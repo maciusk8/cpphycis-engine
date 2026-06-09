@@ -5,6 +5,7 @@
 #include <vector>
 #include "physics/engine.h"
 #include "physics/softBody.h"
+#include <algorithm>
 
 class Renderer {
 public:

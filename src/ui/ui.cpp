@@ -20,22 +20,27 @@ void UI::draw(engine& phys_engine, std::vector<SoftBody>& bodies) noexcept {
     rlImGuiBegin();
     ImGui::Begin("sim control panel");
 
-    ImGui::Text("engine performance");
-    if (ImGui::SliderInt("fps target", &target_fps, 30, 500)) {
-        SetTargetFPS(target_fps);
+    if (ImGui::CollapsingHeader("performance")) {
+        ImGui::Text("engine performance");
+        if (ImGui::SliderInt("fps target", &target_fps, 30, 500)) {
+            SetTargetFPS(target_fps);
+        }
+        ImGui::SliderFloat("time step (dt)", &phys_engine.dt, 0.0001f, 0.01f, "%.4f");
+        ImGui::SliderFloat("time scale", &time_scale, 0.01f, 10.0f, "%.2fx");
+        ImGui::Separator();
+        ImGui::Text("render settings");
+        ImGui::SliderInt("curve resolution", &curve_segments, 1, 30);
     }
-    ImGui::SliderFloat("time step (dt)", &phys_engine.dt, 0.0001f, 0.01f, "%.4f");
-    ImGui::SliderFloat("time scale", &time_scale, 0.01f, 10.0f, "%.2fx");
-    ImGui::Separator();
-    ImGui::Text("render settings");
-    ImGui::SliderInt("curve resolution", &curve_segments, 1, 30);
     ImGui::Separator();
 
-    ImGui::Text("global properties");
-    ImGui::SliderFloat("gravity y", &phys_engine.gravity.y, -2000.0f, 2000.0f);
-    ImGui::SliderFloat("gravity x", &phys_engine.gravity.x, -2000.0f, 2000.0f);
-    ImGui::SliderFloat("node radius", &phys_engine.node_radius, 1.0f, 20.0f);
-    ImGui::SliderFloat("collision stiffness", &phys_engine.collision_stiffness, 0.1f, 1.5f);
+    if (ImGui::CollapsingHeader("global properties")) {
+        ImGui::Text("global properties");
+        ImGui::SliderFloat("gravity y", &phys_engine.gravity.y, -2000.0f, 2000.0f);
+        ImGui::SliderFloat("gravity x", &phys_engine.gravity.x, -2000.0f, 2000.0f);
+        ImGui::SliderFloat("node radius", &phys_engine.node_radius, 1.0f, 20.0f);
+        ImGui::SliderFloat("collision stiffness", &phys_engine.collision_stiffness, 0.1f, 1.5f);
+    }
+
     
     ImGui::Separator();
     ImGui::Text("spawner settings");
@@ -43,8 +48,17 @@ void UI::draw(engine& phys_engine, std::vector<SoftBody>& bodies) noexcept {
     ImGui::Combo("Body Type", &selected_body_type, body_names, IM_ARRAYSIZE(body_names));
     ImGui::InputInt("spawn count", &spawn_count);
     if (spawn_count < 1) spawn_count = 1;
-    
+
+    ImGui::Separator();
+    if (ImGui::CollapsingHeader("paint & color")) {
+        ImGui::ColorPicker3("spawn color", spawn_color); 
+    }
     ImGui::Checkbox("Spawn on click (world)", &spawn_on_click);
+    ImGui::Checkbox("Brush mode (draw static objects)", &brush_mode);
+    if (brush_mode && spawn_on_click) spawn_on_click = false;
+    if (spawn_on_click && brush_mode) brush_mode = false;
+
+    ImGui::Checkbox("Auto Camera", &auto_camera);
     
     if (ImGui::Button("Spawn selected body (random center)")) {
         for (int i = 0; i < spawn_count; ++i) {
@@ -67,6 +81,13 @@ void UI::draw(engine& phys_engine, std::vector<SoftBody>& bodies) noexcept {
 void UI::spawn_current_selection(engine& phys_engine, std::vector<SoftBody>& bodies, float x, float y) noexcept {
     factory::BodyConfig config;
     config.start_pos = {x, y};
+    
+    config.color = {
+        static_cast<unsigned char>(spawn_color[0] * 255.0f),
+        static_cast<unsigned char>(spawn_color[1] * 255.0f),
+        static_cast<unsigned char>(spawn_color[2] * 255.0f),
+        255
+    };
 
     BodyType type = static_cast<BodyType>(selected_body_type);
     switch (type) {

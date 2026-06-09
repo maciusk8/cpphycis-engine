@@ -2,6 +2,10 @@
 #define VEC_2D_H
 #include <cmath>
 
+struct SimColor {
+    unsigned char r, g, b, a;
+};
+
 struct vec2d {
     float x;
     float y;

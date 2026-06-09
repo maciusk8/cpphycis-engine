@@ -60,46 +60,79 @@ int main() {
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
+    float manual_target_zoom = 1.0f;
+
     while (!WindowShouldClose()) {
         double frame_time = GetFrameTime();
         if (frame_time > 0.1) frame_time = 0.1;
 
         accumulator += frame_time * ui.get_time_scale();
         
-        // update camera target zoom
-        float min_y = 800.0f;
-        float min_x = 600.0f, max_x = 600.0f;
-        if (!my_engine.nodes.empty()) {
-            min_x = my_engine.nodes[0].pos.x;
-            max_x = my_engine.nodes[0].pos.x;
+        // --- 0. OBSŁUGA KAMERY ---
+        if (ui.is_auto_camera_enabled()) {
+            float min_y = 800.0f;
+            float min_x = 600.0f, max_x = 600.0f;
+            if (!my_engine.nodes.empty()) {
+                min_x = my_engine.nodes[0].pos.x;
+                max_x = my_engine.nodes[0].pos.x;
+            }
+            for (const auto& node : my_engine.nodes) {
+                if (node.pos.y < min_y) min_y = node.pos.y;
+                if (node.pos.x < min_x) min_x = node.pos.x;
+                if (node.pos.x > max_x) max_x = node.pos.x;
+            }
+            
+            float target_zoom_y = 1.0f;
+            if (min_y < 100.0f) {
+                target_zoom_y = 800.0f / (800.0f - min_y + 100.0f);
+            }
+            float width_needed = max_x - min_x + 200.0f;
+            float target_zoom_x = 1200.0f / width_needed;
+            
+            float target_zoom = std::fmin(target_zoom_x, target_zoom_y);
+            if (target_zoom > 1.0f) target_zoom = 1.0f;
+            
+            camera.zoom += (target_zoom - camera.zoom) * 5.0f * GetFrameTime();
+            
+            float center_x = (min_x + max_x) * 0.5f;
+            camera.target.x += (center_x - camera.target.x) * 5.0f * GetFrameTime();
+            
+            camera.offset = {600.0f, 800.0f};
+            camera.target.y = 800.0f;
+            
+            manual_target_zoom = camera.zoom; 
+            
+        } else {
+            float wheel = GetMouseWheelMove();
+            
+            if (wheel != 0.0f && !ui.wants_mouse_capture()) {
+                Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
+                camera.offset = GetMousePosition();
+                camera.target = mouseWorldPos;
+
+                float scaleFactor = 1.0f + (0.15f * std::abs(wheel));
+                if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
+                
+                manual_target_zoom *= scaleFactor;
+                if (manual_target_zoom < 0.1f) manual_target_zoom = 0.1f;
+                if (manual_target_zoom > 10.0f) manual_target_zoom = 10.0f;
+            }
+
+            camera.zoom += (manual_target_zoom - camera.zoom) * 15.0f * GetFrameTime();
+
+            if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !ui.wants_mouse_capture()) {
+                Vector2 delta = GetMouseDelta();
+                camera.target.x -= delta.x / camera.zoom;
+                camera.target.y -= delta.y / camera.zoom;
+            }
         }
-        for (const auto& node : my_engine.nodes) {
-            if (node.pos.y < min_y) min_y = node.pos.y;
-            if (node.pos.x < min_x) min_x = node.pos.x;
-            if (node.pos.x > max_x) max_x = node.pos.x;
-        }
-        
-        float target_zoom_y = 1.0f;
-        if (min_y < 100.0f) {
-            target_zoom_y = 800.0f / (800.0f - min_y + 100.0f);
-        }
-        float width_needed = max_x - min_x + 200.0f;
-        float target_zoom_x = 1200.0f / width_needed;
-        
-        float target_zoom = std::fmin(target_zoom_x, target_zoom_y);
-        if (target_zoom > 1.0f) target_zoom = 1.0f;
-        
-        camera.zoom += (target_zoom - camera.zoom) * 5.0f * GetFrameTime();
-        
-        float center_x = (min_x + max_x) * 0.5f;
-        camera.target.x += (center_x - camera.target.x) * 5.0f * GetFrameTime();
-        camera.offset.x = 600.0f; // Keep it centered relative to the screen
 
         // --- 1. INPUT ---
         Vector2 mouse = GetMousePosition();
         Vector2 world_mouse = GetScreenToWorld2D(mouse, camera);
 
         bool clicked_on_node = false;
+        static Vector2 last_paint_pos = {-10000.0f, -10000.0f};
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !ui.wants_mouse_capture()) {
             for (size_t i = 0; i < my_engine.nodes.size(); ++i) {
@@ -116,6 +149,38 @@ int main() {
                 ui.spawn_current_selection(my_engine, bodies, world_mouse.x, world_mouse.y);
             }
         }
+
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && ui.is_brush_mode_enabled() && !ui.wants_mouse_capture()) {
+            float dx = world_mouse.x - last_paint_pos.x;
+            float dy = world_mouse.y - last_paint_pos.y;
+            float dist = std::sqrt(dx * dx + dy * dy);
+            
+            if (dist > my_engine.node_radius * 1.5f) {
+                const float* col = ui.get_spawn_color();
+                SimColor brush_color = {
+                    static_cast<unsigned char>(col[0] * 255.0f),
+                    static_cast<unsigned char>(col[1] * 255.0f),
+                    static_cast<unsigned char>(col[2] * 255.0f),
+                    255
+                };
+
+                my_engine.nodes.push_back({
+                    {world_mouse.x, world_mouse.y}, 
+                    {world_mouse.x, world_mouse.y}, 
+                    {0.0f, 0.0f}, 
+                    0.0f,
+                    my_engine.node_radius,
+                    brush_color
+                });
+                last_paint_pos = world_mouse;
+            }
+        }
+
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            grabbedPoint = -1;
+            last_paint_pos = {-10000.0f, -10000.0f};
+        }
+
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) grabbedPoint = -1;
 
         // --- 2. FIZYKA ---

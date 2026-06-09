@@ -27,7 +27,7 @@ void build_rope(engine& eng, const factory::BodyConfig& config, SoftBody& body) 
         vec2d pos = {
             config.start_pos.x,
             config.start_pos.y + (i * config.spacing)};
-        eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius});
+        eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius, config.color});
     }
 
     // Adding Springs
@@ -60,7 +60,7 @@ void build_balloon(engine& eng, const factory::BodyConfig& config, SoftBody& bod
         vec2d pos = {
             center.x + std::cos(angle) * radius,
             center.y + std::sin(angle) * radius};
-        eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius});
+        eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius, config.color});
     }
 
     for (size_t i = 0; i < num_points; ++i) {
@@ -95,7 +95,7 @@ void build_cloth(engine& eng, const factory::BodyConfig& config, SoftBody& body)
             vec2d pos = {
                 config.start_pos.x + x * config.spacing,
                 config.start_pos.y + y * config.spacing};
-            eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius});
+            eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius, config.color});
         }
     }
 
@@ -134,7 +134,7 @@ void build_jello(engine& eng, const factory::BodyConfig& config, SoftBody& body)
             vec2d pos = {
                 config.start_pos.x + x * config.spacing,
                 config.start_pos.y + y * config.spacing};
-            eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius});
+            eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius, config.color});
         }
     }
 
@@ -176,7 +176,7 @@ void build_ball(engine& eng, const factory::BodyConfig& config, SoftBody& body) 
         vec2d pos = {
             center.x + std::cos(angle) * radius,
             center.y + std::sin(angle) * radius};
-        eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius});
+        eng.nodes.push_back({pos, pos, {0.0f, 0.0f}, 1.0f, eng.node_radius, config.color});
     }
 
     size_t center_idx = body.node_start + num_points;
@@ -232,6 +232,7 @@ SoftBody create_body(BodyType type, engine& eng, const BodyConfig& config) {
 
     body.node_end = eng.nodes.size();
     body.spring_end = eng.springs.size();
+    body.color = config.color;
     return body;
 }
 

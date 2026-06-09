@@ -13,6 +13,7 @@ struct BodyConfig {
     int cols = 5;          // For Cloth, Jello
     int rows = 5;          // For Cloth, Jello
     float radius = 50.0f;  // for Ball, Balloon
+    SimColor color = {102, 191, 255, 255};
 };
 
 SoftBody create_body(BodyType type, engine& eng, const BodyConfig& config);

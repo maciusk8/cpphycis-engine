@@ -32,6 +32,12 @@ bool Renderer::is_point_in_triangle(vec2d p, vec2d a, vec2d b, vec2d c) const no
 
 void Renderer::draw_filled_blob(const engine& phys_engine, const SoftBody& body) const noexcept {
     std::vector<vec2d> poly;
+    Color fillColor = { 
+        static_cast<unsigned char>(std::min(255, static_cast<int>(body.color.r * 1.4f))), 
+        static_cast<unsigned char>(std::min(255, static_cast<int>(body.color.g * 1.4f))), 
+        static_cast<unsigned char>(std::min(255, static_cast<int>(body.color.b * 1.4f))), 
+        body.color.a 
+    };
     
     // CCW
     for (int i = static_cast<int>(body.hull_end) - 1; i >= static_cast<int>(body.hull_start); --i) {
@@ -68,7 +74,7 @@ void Renderer::draw_filled_blob(const engine& phys_engine, const SoftBody& body)
                 }
 
                 if (is_ear) {
-                    DrawTriangle({a.x, a.y}, {b.x, b.y}, {c.x, c.y}, SKYBLUE);
+                    DrawTriangle({a.x, a.y}, {b.x, b.y}, {c.x, c.y}, fillColor);
                     remaining.erase(remaining.begin() + i);
                     ear_found = true;
                     break;
@@ -84,13 +90,21 @@ void Renderer::draw_filled_blob(const engine& phys_engine, const SoftBody& body)
                 {remaining[0].x, remaining[0].y}, 
                 {remaining[i].x, remaining[i].y}, 
                 {remaining[i+1].x, remaining[i+1].y}, 
-                SKYBLUE
+                fillColor
             );
         }
     }
 }
 
 void Renderer::draw_smooth_outline(const engine& phys_engine, const SoftBody& body, int curve_segments) const noexcept {
+    Color fillColor = { body.color.r, body.color.g, body.color.b, body.color.a };
+    Color outlineColor = { 
+        static_cast<unsigned char>(body.color.r * 0.6f), 
+        static_cast<unsigned char>(body.color.g * 0.6f), 
+        static_cast<unsigned char>(body.color.b * 0.6f), 
+        255 
+    };
+
     int start = static_cast<int>(body.hull_start);
     int end = static_cast<int>(body.hull_end);
     int n = end - start;
@@ -112,8 +126,8 @@ void Renderer::draw_smooth_outline(const engine& phys_engine, const SoftBody& bo
             float t = static_cast<float>(j) / static_cast<float>(curve_segments);
             vec2d current_point = get_catmull_rom_point(p0, p1, p2, p3, t);
 
-            DrawTriangle({p1.x, p1.y}, {current_point.x, current_point.y}, {prev_point.x, prev_point.y}, SKYBLUE);
-            DrawTriangle({p1.x, p1.y}, {prev_point.x, prev_point.y}, {current_point.x, current_point.y}, SKYBLUE);
+            DrawTriangle({p1.x, p1.y}, {current_point.x, current_point.y}, {prev_point.x, prev_point.y}, fillColor);
+            DrawTriangle({p1.x, p1.y}, {prev_point.x, prev_point.y}, {current_point.x, current_point.y}, fillColor);
 
             prev_point = current_point;
         }
@@ -131,7 +145,7 @@ void Renderer::draw_smooth_outline(const engine& phys_engine, const SoftBody& bo
             float t = static_cast<float>(j) / static_cast<float>(curve_segments);
             vec2d current_point = get_catmull_rom_point(p0, p1, p2, p3, t);
 
-            DrawLineEx({prev_point.x, prev_point.y}, {current_point.x, current_point.y}, 6.0f, DARKBLUE);
+            DrawLineEx({prev_point.x, prev_point.y}, {current_point.x, current_point.y}, 6.0f, outlineColor);
             prev_point = current_point;
         }
     }
@@ -153,6 +167,7 @@ void Renderer::draw_world(const engine& phys_engine, const std::vector<SoftBody>
     }
 
     for (const auto& node : phys_engine.nodes) {
-        DrawCircle(static_cast<int>(node.pos.x), static_cast<int>(node.pos.y), node.radius, DARKBLUE);
+        Color c = { node.color.r, node.color.g, node.color.b, node.color.a };
+        DrawCircle(static_cast<int>(node.pos.x), static_cast<int>(node.pos.y), node.radius, c);
     }
 }
